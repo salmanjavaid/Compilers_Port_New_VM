@@ -14,6 +14,7 @@ int num_lines = 0;
 #define INVALID 8
 #define MAX_STR_CONST 256;
 #define COMMENT 11;
+#define NEWLINE 13;
 
 char string_buf[256];
 char *string_buf_ptr;
@@ -30,18 +31,36 @@ char *string_buf_ptr_cmnt;
 %x readcomment
 %%
 
+/*
+ * The logic is once you find --, you start comment state machine
+ * and keep on updating the commentfeeds variable which counts the
+ * number of --. Once you encounter @start, you start a new state machine
+ * readcomment, which looks for alpha-numeric characters, and space
+ * while storing them in string_buf_ptr_cmnt. You also keep the size of string
+ * in size variable. Once you encounter @end, you move back to comment state
+ * machine and start it again while updating commentfeeds. Once you encounter
+ * more than 4 commentfeeds, you terminate the comment state machine and print
+ * the result. flag variable is used to make sure that when we enter the comment
+ * state machine second time, we don't reassign string_buf_ptr_cmnt to
+ * string_buf_cmnt.
+*/
+
+
 "class"   return ID;
-\-- { if (flag == 0){string_buf_ptr_cmnt = string_buf_cmnt;} BEGIN(comment);}
+\n        return NEWLINE;
+\-- { if (flag == 0){ string_buf_ptr_cmnt = string_buf_cmnt;} BEGIN(comment);commentfeeds++;}
 <comment>\--	{
-  if (commentfeeds < 4){
-    int i = 0; BEGIN(INITIAL); 
+  if (commentfeeds > 3){
+    int i = 0;
+    BEGIN(INITIAL); 
     *string_buf_ptr_cmnt = '\0'; 
-    string_buf_ptr_cmnt-=18; 
+    string_buf_ptr_cmnt-=size; 
 
     while(i < size){ 
          printf("%c", *(string_buf_ptr_cmnt+i)); 
       i++; 
     } 
+    commentfeeds = 0; size = 0; string_buf_ptr_cmnt-=size;
     return COMMENT;
   }
   else {
@@ -55,14 +74,14 @@ char *string_buf_ptr_cmnt;
 <readcomment>[a-zA-Z0-9]  {
   char *yptr = yytext;
   int i = 0;
-  // printf("%s\n", yytext); 
+
   while ( *yptr ){  
         *string_buf_ptr_cmnt++ = *yptr++;  
         size++;  
         i++;  
   }  
 }
-<readcomment>"@end" {BEGIN(comment); flag = 1;}
+<readcomment>"@end" {BEGIN(comment); flag = 1; commentfeeds++;}
 
 %%
 
