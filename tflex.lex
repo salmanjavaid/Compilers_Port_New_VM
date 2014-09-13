@@ -70,7 +70,7 @@
 \"     { string_buf_ptr = string_buf; BEGIN(str);}
 
 <str>\"        { /* saw closing quote - all done */
-  yyrestart(yyin);
+
   BEGIN(INITIAL);
   *string_buf_ptr = '\0';
   /* return string constant token type and
