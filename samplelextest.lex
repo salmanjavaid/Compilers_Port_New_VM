@@ -20,14 +20,17 @@ int num_lines = 0;
 char string_buf[256];
 char *string_buf_ptr;
 
-//char string_buf_cmnt[256];
-//char *string_buf_ptr_cmnt;
+char string_buf_dscp[256];
+char *string_buf_dscp_ptr;
  int size = 0;
+ int sizeOfTitle = 0;
  int sizeOfDescription = 0;
  int num = 0;
  int commentfeeds = 0;
- char flag = 0;
- int flagcomment = 0;
+ int flagTitle = 0;
+ int flagComment = 0;
+ int flagEnd = 0;
+ int flagSwitch = 0;
 %}
 /*
  * The logic is once you find --, you start comment state machine
@@ -45,37 +48,76 @@ char *string_buf_ptr;
 
 
 %x comment
+%x Description
 %%
 
 \n      return NEWLINE;
 \-- 	{ 
 			  string_buf_ptr = string_buf;
+			  string_buf_dscp_ptr = string_buf_dscp;
 			  commentfeeds++;
 			  BEGIN(comment);
 	}
 <comment>\--		{	
-  if (commentfeeds > 3)
-    {
-      BEGIN(INITIAL);
-    }
-  else
-    {
-      commentfeeds++;
-    }
+  			  if (flagTitle == 0 && flagComment == 1) {
+			    if (flagSwitch == 0) {
+					int i = 0;
+       					*string_buf_ptr = '\0'; 
+					string_buf_ptr-=sizeOfTitle;	    
+					while(i < sizeOfTitle) { 
+					  printf("%c", *(string_buf_ptr+i)); 
+					  i++; 
+					  }
+					printf("\n");
+					flagSwitch = 1;
+			    }
+			  }
+			  else if (flagComment == 0 && flagEnd == 1) {
+				    if (flagEnd == 1) {
+					int i = 0;
+       					*string_buf_dscp_ptr = '\0'; 
+					string_buf_dscp_ptr-=sizeOfDescription;
+					while(i < sizeOfDescription) { 
+					  printf("%c", *(string_buf_dscp_ptr+i)); 
+					  i++; 
+				        }
+       				    } 
+			  }
+			  commentfeeds++;
  }
 <comment>[ ]+		;
 <comment>\*		;
-<comment>\n		;
-<comment>"@type"	;
-<comment>[a-zA-Z0-9][-]?    {
-					  char *yptr = yytext; 
+<comment>\n		{
+  				if (flagTitle == 1) {
+				    *string_buf_ptr++ = '\n';   
+	   			    sizeOfTitle++;   
+				}				
+				else if (flagComment == 1) {
+				    *string_buf_dscp_ptr++ = '\n';   		  
+				    sizeOfDescription++;   
+			       	}
+ 			}
+<comment>"@type"	flagTitle = 1;
+<comment>"@start"	flagTitle = 0; flagComment = 1;
+<comment>"@end"         flagComment = 0; flagEnd = 1;
+<comment>[a-zA-Z0-9][-]?[ ]?    {
+  					if (flagTitle == 1) {
+				  	  char *yptr = yytext; 
 					  int i = 0; 
-					  while ( *yptr ){   
-				          *string_buf_ptr++ = *yptr++;   
-				          size++;   
+					  while ( *yptr ) {   
+					  *string_buf_ptr++ = *yptr++;   
+					  sizeOfTitle++;   
 					  }				       
- }
-
+					}
+					else if (flagComment == 1) {
+				  	  char *yptr = yytext; 
+					  int i = 0; 
+					  while ( *yptr ) {   
+					    *string_buf_dscp_ptr++ = *yptr++;   			                       sizeOfDescription++;   
+					  }				        
+					}
+					else {  }
+    }
 %%
 
 int yywrap(void){
