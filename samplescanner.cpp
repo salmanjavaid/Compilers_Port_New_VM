@@ -11,9 +11,9 @@ int main(){
   int ntoken;
   ntoken = yylex();
   while(ntoken){   
-    if (ntoken !=32){
+    //    if (ntoken !=32){
       //printf("%s: %d\n", yytext, ntoken);
-    }
+    //}
     ntoken = yylex();
   }
   return 1;

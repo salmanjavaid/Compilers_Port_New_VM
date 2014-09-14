@@ -1,0 +1,17 @@
+--
+-- *********************************************************************************************
+--
+--  @type L1A-ServingCellIndex-r10
+--  @start
+--  Defines the cell index for serving cells 
+--  value 0 corresponds to the primary cell 
+--  values from 1 to 7 corresponds to the configured secondary cells
+--  @end
+-- =============================================================================================
+--
+-- start : The physical identity of the black listed cells.
+--
+-- range    : Range Indicator of black listed cells.
+--
+-- *********************************************************************************************
+L1A-ServingCellIndex-r10  ::=              INTEGER (0..7)

@@ -16,11 +16,12 @@ int num_lines = 0;
 #define COMMENT 11;
 #define NEWLINE 13;
 
+
 char string_buf[256];
 char *string_buf_ptr;
 
-char string_buf_cmnt[256];
-char *string_buf_ptr_cmnt;
+//char string_buf_cmnt[256];
+//char *string_buf_ptr_cmnt;
  int size = 0;
  int sizeOfDescription = 0;
  int num = 0;
@@ -44,23 +45,18 @@ char *string_buf_ptr_cmnt;
 
 
 %x comment
-%x readcomment
-%x readDescription
 %%
 
 \n      return NEWLINE;
 \-- 	{ 
-  //			  string_buf_ptr = string_buf;
+			  string_buf_ptr = string_buf;
 			  commentfeeds++;
 			  BEGIN(comment);
 	}
 <comment>\--		{	
-  if (commentfeeds > 4)
+  if (commentfeeds > 3)
     {
-      //		          string_buf_ptr = '\0';
-      //			  string_buf_ptr-=size;
-			  int i = 0;
-			  BEGIN(INITIAL);
+      BEGIN(INITIAL);
     }
   else
     {
@@ -71,25 +67,20 @@ char *string_buf_ptr_cmnt;
 <comment>\*		;
 <comment>\n		;
 <comment>"@type"	;
+<comment>[a-zA-Z0-9][-]?    {
+					  char *yptr = yytext; 
+					  int i = 0; 
+					  while ( *yptr ){   
+				          *string_buf_ptr++ = *yptr++;   
+				          size++;   
+					  }				       
+ }
+
 %%
 
 int yywrap(void){
   return 1;
 }
-
-/* <readDescription>--		; */
-/* <readDescription>[a-zA-Z0-9_][-]+[ ]+	{ */
-/*   //		  char *yptr = yytext; */
-/*   //					  int i = 0; */
-/*   //					  while ( *yptr ){   */
-/*   //				          *string_buf_ptr_cmnt++ = *yptr++;   */
-/*   //				          sizeOfDescription++;   */
-/*   //					  }					   */
-/* 					} */
-/* <readDescription>"@end"		{ */
-/* 					  BEGIN(comment); */
-/* 				} */
-/* <readDescription>\n		;//\*string_buf_ptr_cmnt++='\n'; */
 
 
 

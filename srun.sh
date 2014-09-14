@@ -1,6 +1,6 @@
 #!/bin/bash
-if flex sample.lex; then
+if flex samplelextest.lex; then
     if g++ lex.yy.c samplescanner.cpp -o a; then
-	./a < input.txt
+	./a < input3.txt
     fi
 fi
