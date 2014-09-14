@@ -26,11 +26,6 @@ char *string_buf_ptr_cmnt;
  int commentfeeds = 0;
  char flag = 0;
 %}
-
-%x comment
-%x readcomment
-%%
-
 /*
  * The logic is once you find --, you start comment state machine
  * and keep on updating the commentfeeds variable which counts the
@@ -46,6 +41,12 @@ char *string_buf_ptr_cmnt;
 */
 
 
+%x comment
+%x readcomment
+%%
+
+
+
 "class"   return ID;
 \n        return NEWLINE;
 \-- { if (flag == 0){ string_buf_ptr_cmnt = string_buf_cmnt;} BEGIN(comment);commentfeeds++;}
@@ -58,7 +59,7 @@ char *string_buf_ptr_cmnt;
 
     while(i < size){ 
          printf("%c", *(string_buf_ptr_cmnt+i)); 
-      i++; 
+	 i++; 
     } 
     commentfeeds = 0; size = 0; string_buf_ptr_cmnt-=size;
     return COMMENT;
@@ -66,7 +67,7 @@ char *string_buf_ptr_cmnt;
   else {
     commentfeeds++;
   }
- }
+}
 <comment>[ ]+   ;
 <comment>\n	;
 <comment>"@start"   {BEGIN(readcomment);}
@@ -74,7 +75,6 @@ char *string_buf_ptr_cmnt;
 <readcomment>[a-zA-Z0-9]  {
   char *yptr = yytext;
   int i = 0;
-
   while ( *yptr ){  
         *string_buf_ptr_cmnt++ = *yptr++;  
         size++;  
@@ -90,16 +90,6 @@ int yywrap(void){
 }
 
 
- /*  main(int argc, char **argv) {  */
- /*   int res;  */
- /*   int i = 0;  */
- /*   yyin = stdin;  */
- /*   while(res = yylex()) {    */
- /*     i = 0;  */
- /*     printf("class: %d line: %d\n", res, num_lines);  */
- /*     printf("\n");  */
- /*   }  */
- /* } */
 
  
 
