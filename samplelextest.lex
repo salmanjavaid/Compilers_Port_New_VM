@@ -31,6 +31,7 @@ char *string_buf_dscp_ptr;
  int flagComment = 0;
  int flagEnd = 0;
  int flagSwitch = 0;
+ int flagFinal = 0;
 %}
 /*
  * The logic is once you find --, you start comment state machine
@@ -53,41 +54,51 @@ char *string_buf_dscp_ptr;
 
 \n      return NEWLINE;
 \-- 	{ 
+ 			  
 			  string_buf_ptr = string_buf;
 			  string_buf_dscp_ptr = string_buf_dscp;
 			  commentfeeds++;
 			  BEGIN(comment);
+			  
+			  flagFinal = 0, flagTitle = 0, flagComment = 0, flagSwitch = 0, sizeOfTitle = 0, sizeOfDescription = 0;
 	}
-<comment>\--		{	
+<comment>\--		{ 
+  if (flagFinal == 0) {
   			  if (flagTitle == 0 && flagComment == 1) {
 			    if (flagSwitch == 0) {
 					int i = 0;
        					*string_buf_ptr = '\0'; 
 					string_buf_ptr-=sizeOfTitle;	    
 					while(i < sizeOfTitle) { 
-					  printf("%c", *(string_buf_ptr+i)); 
+					  //printf("%c", *(string_buf_ptr+i)); 
 					  i++; 
 					  }
-					printf("\n");
+					//printf("\n");
 					flagSwitch = 1;
+					string_buf_ptr-=sizeOfTitle;
 			    }
 			  }
 			  else if (flagComment == 0 && flagEnd == 1) {
-				    if (flagEnd == 1) {
+				    if (flagSwitch == 1) {
 					int i = 0;
        					*string_buf_dscp_ptr = '\0'; 
 					string_buf_dscp_ptr-=sizeOfDescription;
 					while(i < sizeOfDescription) { 
-					  printf("%c", *(string_buf_dscp_ptr+i)); 
+					  //printf("%c", *(string_buf_dscp_ptr+i));
 					  i++; 
 				        }
+					flagFinal= 1;
+	      				string_buf_dscp_ptr-=sizeOfDescription;
+					//printf("\n\n\n");
        				    } 
 			  }
 			  commentfeeds++;
+  } else {}
  }
 <comment>[ ]+		;
 <comment>\*		;
 <comment>\n		{
+  if (flagFinal == 0) {
   				if (flagTitle == 1) {
 				    *string_buf_ptr++ = '\n';   
 	   			    sizeOfTitle++;   
@@ -96,28 +107,40 @@ char *string_buf_dscp_ptr;
 				    *string_buf_dscp_ptr++ = '\n';   		  
 				    sizeOfDescription++;   
 			       	}
+  }
  			}
 <comment>"@type"	flagTitle = 1;
 <comment>"@start"	flagTitle = 0; flagComment = 1;
 <comment>"@end"         flagComment = 0; flagEnd = 1;
+<comment>"@TagsEndsHere" BEGIN(INITIAL);
 <comment>[a-zA-Z0-9][-]?[ ]?    {
-  					if (flagTitle == 1) {
-				  	  char *yptr = yytext; 
-					  int i = 0; 
-					  while ( *yptr ) {   
-					  *string_buf_ptr++ = *yptr++;   
-					  sizeOfTitle++;   
-					  }				       
-					}
-					else if (flagComment == 1) {
-				  	  char *yptr = yytext; 
-					  int i = 0; 
-					  while ( *yptr ) {   
-					    *string_buf_dscp_ptr++ = *yptr++;   			                       sizeOfDescription++;   
-					  }				        
-					}
+				  if (flagFinal == 0) {
+  						if (flagTitle == 1) {
+					  	  char *yptr = yytext; 
+						  int i = 0; 
+						  while ( *yptr ) {   
+							  *string_buf_ptr++ = *yptr++;   
+							  sizeOfTitle++;   
+						  }				       	      					}
+						else if (flagComment == 1) {
+					  	  char *yptr = yytext; 
+						  int i = 0; 
+						  while ( *yptr ) {   
+						    *string_buf_dscp_ptr++ = *yptr++;   			                       sizeOfDescription++;   
+						  }				        
+						}
 					else {  }
+				  } else { }
     }
+<comment>"="  	;
+<comment>":"	;
+<comment>"("	;
+<comment>")"	;
+<comment>"."	;
+<comment>"{"	;
+<comment>"}"	;
+<comment>","    ;
+
 %%
 
 int yywrap(void){
